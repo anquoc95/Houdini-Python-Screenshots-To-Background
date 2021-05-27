@@ -1,101 +1,5 @@
 # Credit : https://berniebernie.fr/wiki/Houdini_Python
 
-
-    
-import os
-
-
-hou.ui.displayMessage("Now , this code only load file in $HIP file ")
-if hou.ui.displayMessage("Save Or Load Node",
-                          buttons = ("Save","Load"),
-                          title = "Mode") == 0:
-
-
-    check_select_node = hou.selectedNodes()        
-    
-    if check_select_node:
-        
-        if hou.ui.displayMessage("If In setup you want to save has nodes like Solver or HDA you need Unpack It BEFORE you save",
-                        
-                        title = "READ ME!!!",
-                        
-                        buttons = ("You Already To Save ? "," You Want Leave ? "),
-                        
-                        close_choice = 1,
-                        
-                        default_choice = 0,
-                                                                                               
-                        details = "Because Any Data In Solver Node and HDA can not be save as Code if it's locked \n"  + 
-                        
-                        "and i don't know how can do it in Python ( I can Find it but i can not unlock it ) right now \n"+
-                        
-                        "So... That Why..:))",
-                        
-                        details_expanded = False
-                        
-                        ) is not 1:
-    
-            node = hou.selectedNodes()[0]
-            
-            folder = hou.ui.readInput("Py Name",title = "Py Name",initial_contents = "save as code")    
-            
-            dir = os.path.dirname(hou.hipFile.path())
-            
-            node_file = open(dir + "/"+str(folder[1])+".py", "w")
-            
-            node_file.write(node.asCode(False, True))
-            
-            node_file.close()
-        
-        else:
-            
-            pass
-
-
-    else:
-    
-        hou.ui.displayMessage("Please ! Select A Not To Save",
-                                
-                                title = "WARNING !!!")
-
-
-else:
-    
-    dir = os.path.dirname(hou.hipFile.path())    
-    
-    pyfile = hou.ui.selectFile(  title = "Select py File To Load",
-                        
-                        file_type=hou.fileType.Any,
-                        
-                        pattern = "*py",
-                        
-                        multiple_select = False,
-                        
-                        chooser_mode = hou.fileChooserMode.Write,
-                        
-                        width = 0,                        
-                        
-                        height = 0)
-    
-    afile = pyfile.replace("HIP","")
-    
-    bfile = afile.replace("$/","")
-    
-    cfile = bfile.replace(".py","")
-    
-    final_name = dir+"/"+cfile+".py"
-    
-    execfile(final_name)
-    
-    print "Load data from >> " + final_name
-
-
-
-
-
-
-​[7:18 PM] Nguyen Vu Quoc An
-    
 import hou
 import os
 import subprocess
@@ -106,6 +10,7 @@ if hou.ui.displayMessage("Want To Get Image Into NetWorks ?",
                           buttons = ("Accept","Cancel"),
                           title = "WARNING !!! ") == 0:
 
+ 
 
     widthRatio = 4                     
     readsize = hou.ui.readInput("Size Image",title = "Image Size",initial_contents = "1")
@@ -226,7 +131,4 @@ if hou.ui.displayMessage("Want To Get Image Into NetWorks ?",
     #print "1"
 else:
     #print "0"
-    pass 
-
-
-
+    pass
