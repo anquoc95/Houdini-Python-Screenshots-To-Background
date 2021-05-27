@@ -1,0 +1,232 @@
+# Credit : https://berniebernie.fr/wiki/Houdini_Python
+
+[7:15 PM] Nguyen Vu Quoc An
+    
+import os
+
+
+hou.ui.displayMessage("Now , this code only load file in $HIP file ")
+if hou.ui.displayMessage("Save Or Load Node",
+                          buttons = ("Save","Load"),
+                          title = "Mode") == 0:
+
+
+    check_select_node = hou.selectedNodes()        
+    
+    if check_select_node:
+        
+        if hou.ui.displayMessage("If In setup you want to save has nodes like Solver or HDA you need Unpack It BEFORE you save",
+                        
+                        title = "READ ME!!!",
+                        
+                        buttons = ("You Already To Save ? "," You Want Leave ? "),
+                        
+                        close_choice = 1,
+                        
+                        default_choice = 0,
+                                                                                               
+                        details = "Because Any Data In Solver Node and HDA can not be save as Code if it's locked \n"  + 
+                        
+                        "and i don't know how can do it in Python ( I can Find it but i can not unlock it ) right now \n"+
+                        
+                        "So... That Why..:))",
+                        
+                        details_expanded = False
+                        
+                        ) is not 1:
+    
+            node = hou.selectedNodes()[0]
+            
+            folder = hou.ui.readInput("Py Name",title = "Py Name",initial_contents = "save as code")    
+            
+            dir = os.path.dirname(hou.hipFile.path())
+            
+            node_file = open(dir + "/"+str(folder[1])+".py", "w")
+            
+            node_file.write(node.asCode(False, True))
+            
+            node_file.close()
+        
+        else:
+            
+            pass
+
+
+    else:
+    
+        hou.ui.displayMessage("Please ! Select A Not To Save",
+                                
+                                title = "WARNING !!!")
+
+
+else:
+    
+    dir = os.path.dirname(hou.hipFile.path())    
+    
+    pyfile = hou.ui.selectFile(  title = "Select py File To Load",
+                        
+                        file_type=hou.fileType.Any,
+                        
+                        pattern = "*py",
+                        
+                        multiple_select = False,
+                        
+                        chooser_mode = hou.fileChooserMode.Write,
+                        
+                        width = 0,                        
+                        
+                        height = 0)
+    
+    afile = pyfile.replace("HIP","")
+    
+    bfile = afile.replace("$/","")
+    
+    cfile = bfile.replace(".py","")
+    
+    final_name = dir+"/"+cfile+".py"
+    
+    execfile(final_name)
+    
+    print "Load data from >> " + final_name
+
+
+
+
+
+
+​[7:18 PM] Nguyen Vu Quoc An
+    
+import hou
+import os
+import subprocess
+import nodegraphutils as utils
+from datetime import datetime
+from time import gmtime, strftime
+if hou.ui.displayMessage("Want To Get Image Into NetWorks ?",
+                          buttons = ("Accept","Cancel"),
+                          title = "WARNING !!! ") == 0:
+
+
+    widthRatio = 4                     
+    readsize = hou.ui.readInput("Size Image",title = "Image Size",initial_contents = "1")
+    readOpacity = hou.ui.readInput("Opacity Image",title = "Image Opacity",initial_contents = "0.5")
+##################
+    
+    
+    opacity = float(readOpacity[1])
+    isize = float(readsize[1])
+    def removeBackgroundImage(**kwargs):
+        ''' erases bg image from tuples of backgroundImages() if it can find it, updates bg '''
+        deletingNode = [x[1] for x in  kwargs.items()][0]
+        image = deletingNode.parm('houdinipath').eval()
+        editor = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor)
+        backgroundImagesDic = editor.backgroundImages()
+        backgroundImagesDic = tuple(x for x in backgroundImagesDic if x.path() != image)
+        editor.setBackgroundImages(backgroundImagesDic)
+        utils.saveBackgroundImages(editor.pwd(), backgroundImagesDic)
+    brightness = opacity
+    def changeBackgroundImageBrightness(event_type,**kwargs):
+        ''' changes brightness/visibility if template or bypass flags are checked -- its poorly written/thought but i was tired'''
+        nullNode = [x[1] for x in  kwargs.items()][0]
+        image = nullNode.parm('houdinipath').eval()
+        brightness = opacity
+        if nullNode.isBypassed():
+            brightness = opacity
+        elif nullNode.isTemplateFlagSet():
+            brightness = opacity
+        editor = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor)
+        backgroundImagesDic = editor.backgroundImages()
+        i = 0
+        for item in backgroundImagesDic:
+            if item.path() == image:
+                backgroundImagesDic[i].setBrightness(brightness)
+                break
+            i = i + 1
+        editor.setBackgroundImages(backgroundImagesDic)
+        utils.saveBackgroundImages(editor.pwd(), backgroundImagesDic)
+        
+    #generate unique(ish) path for screenshot
+    cur_desktop = hou.ui.curDesktop()
+    desktop = cur_desktop.name()
+    viewer = hou.paneTabType.SceneViewer
+    panetab = cur_desktop.paneTabOfType(viewer).name()
+    persp = cur_desktop.paneTabOfType(viewer).curViewport().name()
+    camera_path = desktop + '.' + panetab + '.' + 'world.' + persp
+    hn = hou.getenv('HIPNAME')
+    timestamp = strftime("%d"+"_"+"%m"+"_"+"%Y_", gmtime())
+    sec = strftime("%H"+"h_"+"%M"+"p_"+"%S"+"s")
+    defaultName = strftime(hn + "-" + "%Y" + "-" + "%m" + "-" + "%d" +"_.jpg", gmtime())
+    #dir = strftime("screenshot" + "/" + hn + "-" + "%Y" + "-" + "%m" + "-" + "%d" +"_.jpg", gmtime())    
+    filename = hou.ui.selectFile(start_directory = "$HIP\\" + "screenshot",
+                                 title = "Select Screenshot File",
+                                 default_value = hn + "_" + timestamp+sec+".jpg" ,
+                                 file_type=hou.fileType.Image,
+                                 #pattern = "jpg",
+                                 multiple_select = True,
+                                 chooser_mode = hou.fileChooserMode.Write,
+                                 width = 0,
+                                 height = 0)
+            
+    if filename is not None:
+        frame = hou.frame()
+        hou.hscript("viewwrite -f %d %d %s '%s'" % (frame, frame,
+                    camera_path, filename))
+    ##########################
+    houdinipath = filename
+    #take screenshot with capture region
+    #takeScreenShot(systempath)
+    #set up background image plane
+    editor = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor)
+    image = hou.NetworkImage()
+    image.setPath(houdinipath)
+    sel = hou.selectedNodes()
+    nullNode = ''
+    if sel:
+        lastSel = sel[-1]
+        nullNode = lastSel.parent().createNode('null','screenshot')
+        if lastSel.outputConnections():
+            nullNode.setInput(0,lastSel)                   
+    else:
+        nullNode = editor.pwd().createNode('null','screenshot') 
+        nullNode.moveToGoodPosition()
+        lastSel = nullNode
+    #configure image plane placement
+    nullName = hn + "_" + timestamp + sec
+    nullNode.setName("Screenshot_for_" + nullName)
+    nullNode.setUserData('nodeshape','task')
+    nullNode.setPosition(lastSel.position())
+    nullNode.setColor(hou.Color(.3,.3,.3))
+    nullNode.move([lastSel.size()[0]*2,-lastSel.size()[1]*2])
+    nullNode.bypass(True)
+    #nullNode.bypass(False)
+    nullNode.setTemplateFlag(True)
+#    rez = hou.imageResolution(defaultName)
+#    print rez
+    ratio = float(isize)
+    rect = hou.BoundingRect(0,-lastSel.size()[1]*1.1,widthRatio,-widthRatio*ratio-lastSel.size()[1]*1.1)
+    image.setRelativeToPath(nullNode.path())
+    image.setRect(rect)
+    #following is adding a spare parm with image path to be able to know which node corresponds to which background image
+    #could have used a user attribute or relativeToPath() and smarter logic but it works and it helps me visualize filepath
+    hou_parm_template_group = hou.ParmTemplateGroup()
+    hou_parm_template = hou.LabelParmTemplate("houdinipath", "Label", column_labels=(['\\'+houdinipath]))
+    hou_parm_template.hideLabel(True)
+    hou_parm_template_group.append(hou_parm_template)
+    nullNode.setParmTemplateGroup(hou_parm_template_group)
+    #attach a function that deletes the background image plane if the corresponding node is deleted (faster than doing it by hand)
+    if filename is not None:
+        nullNode.addEventCallback((hou.nodeEventType.BeingDeleted,), removeBackgroundImage)    
+        nullNode.addEventCallback((hou.nodeEventType.FlagChanged,), changeBackgroundImageBrightness)
+        backgroundImagesDic = editor.backgroundImages()
+        backgroundImagesDic = backgroundImagesDic + (image,)
+        editor.setBackgroundImages(backgroundImagesDic)
+        utils.saveBackgroundImages(editor.pwd(), backgroundImagesDic)
+    else:
+        pass
+    #print "1"
+else:
+    #print "0"
+    pass 
+
+
+
